@@ -1,115 +1,62 @@
 import streamlit as st
 import csv
-import pandas as pd
+import os
 
 ARQUIVO = "cadastro.csv"
 
-estados_brasil = [
-    'AC', 'AL', 'AP', 'AM', 'BA', 'CE', 'DF', 'ES', 'GO', 'MA',
-    'MT', 'MS', 'MG', 'PA', 'PB', 'PR', 'PE', 'PI', 'RJ', 'RN',
-    'RS', 'RO', 'RR', 'SC', 'SP', 'SE', 'TO'
-]
-
-def ler_arquivo():
+def ler_arquivo(nome_arquivo):
     pessoas = []
-    try:
-        with open(ARQUIVO, "r", newline='') as arquivo:
+    if os.path.exists(nome_arquivo):
+        with open(nome_arquivo, "r", newline='', encoding="utf-8") as arquivo:
             leitor = csv.DictReader(arquivo)
             for linha in leitor:
-                if linha["idade"] == "idade":  # evita cabeçalho duplicado
+                try:
+                    pessoas.append({
+                        "nome": linha["nome"],
+                        "idade": int(linha["idade"]),
+                        "estado": linha["estado"]
+                    })
+                except:
                     continue
-                pessoas.append({
-                    "nome": linha["nome"],
-                    "idade": int(linha["idade"]),
-                    "estado": linha["estado"]
-                })
-    except FileNotFoundError:
-        pass
     return pessoas
 
-def salvar_arquivo(pessoas):
-    with open(ARQUIVO, "w", newline='') as arquivo:
+def salvar_arquivo(pessoas, nome_arquivo):
+    with open(nome_arquivo, "w", newline='', encoding="utf-8") as arquivo:
         escritor = csv.DictWriter(arquivo, fieldnames=["nome", "idade", "estado"])
         escritor.writeheader()
         for pessoa in pessoas:
             escritor.writerow(pessoa)
 
-st.set_page_config(page_title="Cadastro de Pessoas", page_icon="📝", layout="wide")
-st.title("✨📋 Cadastro de Pessoas")
+# Inicia app
+st.set_page_config(page_title="Cadastro de Pessoas", layout="centered")
+st.title("📝 Cadastro de Pessoas")
 
-pessoas = ler_arquivo()
+pessoas = ler_arquivo(ARQUIVO)
 
-menu = st.sidebar.selectbox("Menu", [
-    "Cadastrar Pessoa",
-    "Exibir Pessoas",
-    "Buscar por Estado",
-    "Ordenar por Nome",
-    "Ordenar por Idade",
-    "Exportar JSON"
-])
+# Formulário de cadastro
+with st.form("cadastro_form"):
+    nome = st.text_input("Nome")
+    idade = st.number_input("Idade", min_value=0, step=1)
+    estado = st.selectbox("Estado", [
+        "AC", "AL", "AP", "AM", "BA", "CE", "DF", "ES",
+        "GO", "MA", "MT", "MS", "MG", "PA", "PB", "PR",
+        "PE", "PI", "RJ", "RN", "RS", "RO", "RR", "SC",
+        "SP", "SE", "TO"
+    ])
+    submitted = st.form_submit_button("Cadastrar")
 
-if menu == "Cadastrar Pessoa":
-    st.subheader("📥 Formulário de Cadastro")
-    with st.form("cadastro_form"):
-        col1, col2 = st.columns(2)
-        with col1:
-            nome = st.text_input("Nome")
-            estado = st.selectbox("Selecione seu estado", estados_brasil)
-        with col2:
-            idade = st.number_input("Idade", min_value=0, max_value=150, step=1)
-        enviar = st.form_submit_button("Cadastrar")
-
-    if enviar:
-        if not nome:
-            st.error("❌ Por favor, preencha o nome.")
+    if submitted:
+        if nome.strip() == "":
+            st.warning("Digite um nome válido.")
         else:
-            nova = {"nome": nome, "idade": idade, "estado": estado}
-            pessoas.append(nova)
-            salvar_arquivo(pessoas)
-            st.success(f"✅ {nome} cadastrado(a) com sucesso!")
+            pessoas.append({"nome": nome.strip(), "idade": idade, "estado": estado})
+            salvar_arquivo(pessoas, ARQUIVO)
+            st.success(f"{nome} cadastrado(a) com sucesso!")
+            st.experimental_rerun()  # Atualiza a tela com o novo cadastro
 
-elif menu == "Exibir Pessoas":
-    st.subheader("📋 Lista de Pessoas")
-    if pessoas:
-        df = pd.DataFrame(pessoas)
-        st.dataframe(df)
-    else:
-        st.info("Nenhuma pessoa cadastrada ainda.")
-
-elif menu == "Buscar por Estado":
-    st.subheader("🔎 Buscar Pessoas por Estado")
-    estado_busca = st.selectbox("Selecione o estado para buscar", [""] + estados_brasil)
-    if estado_busca:
-        filtradas = [p for p in pessoas if p["estado"].lower() == estado_busca.lower()]
-        if filtradas:
-            df = pd.DataFrame(filtradas)
-            st.dataframe(df)
-        else:
-            st.warning(f"Nenhuma pessoa encontrada no estado '{estado_busca}'.")
-
-elif menu == "Ordenar por Nome":
-    st.subheader("📈 Pessoas Ordenadas por Nome")
-    ordenadas = sorted(pessoas, key=lambda p: p["nome"])
-    if ordenadas:
-        df = pd.DataFrame(ordenadas)
-        st.dataframe(df)
-    else:
-        st.info("Nenhuma pessoa cadastrada ainda.")
-
-elif menu == "Ordenar por Idade":
-    st.subheader("📈 Pessoas Ordenadas por Idade")
-    ordenadas = sorted(pessoas, key=lambda p: p["idade"])
-    if ordenadas:
-        df = pd.DataFrame(ordenadas)
-        st.dataframe(df)
-    else:
-        st.info("Nenhuma pessoa cadastrada ainda.")
-
-elif menu == "Exportar JSON":
-    st.subheader("📤 Exportar Cadastro para JSON")
-    nome_json = st.text_input("Nome do arquivo JSON", value="cadastro.json")
-    if st.button("Exportar"):
-        import json
-        with open(nome_json, "w", encoding="utf-8") as f:
-            json.dump(pessoas, f, ensure_ascii=False, indent=4)
-        st.success(f"Arquivo '{nome_json}' exportado com sucesso!")
+# Exibe tabela
+st.header("👥 Pessoas cadastradas")
+if pessoas:
+    st.table(pessoas)
+else:
+    st.info("Nenhuma pessoa cadastrada ainda.")

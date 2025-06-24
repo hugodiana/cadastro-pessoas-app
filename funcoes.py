@@ -1,3 +1,4 @@
+import os
 import csv
 
 def cadastrar_pessoa(pessoas, nome_arquivo):
@@ -17,26 +18,32 @@ def salvar_arquivo(pessoas, nome_arquivo):
             escritor.writerow(pessoa)
     print("Arquivo salvo com sucesso!\n")
 
-import os
 
 def ler_arquivo(nome_arquivo):
     pessoas = []
     if not os.path.exists(nome_arquivo):
-        return pessoas  # retorna lista vazia se arquivo não existe
+        # Arquivo não existe, retorna lista vazia
+        return pessoas
+
     with open(nome_arquivo, "r", newline='') as arquivo:
         leitor = csv.DictReader(arquivo)
         for linha in leitor:
-            if linha["idade"] == "idade":  # ignora cabeçalho duplicado
+            # Verifica se a linha está completa e os dados são válidos
+            try:
+                nome = linha.get("nome", "").strip()
+                idade = int(linha.get("idade", "0").strip())
+                estado = linha.get("estado", "").strip()
+
+                if nome and estado:
+                    pessoas.append({
+                        "nome": nome,
+                        "idade": idade,
+                        "estado": estado
+                    })
+            except (ValueError, TypeError):
+                # Ignora linhas problemáticas
                 continue
-            pessoas.append({
-                "nome": linha["nome"],
-                "idade": int(linha["idade"]),
-                "estado": linha["estado"]
-            })
     return pessoas
-
-
-
 
 def exibir_pessoas(pessoas):
     if not pessoas:
