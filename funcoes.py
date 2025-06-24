@@ -17,22 +17,24 @@ def salvar_arquivo(pessoas, nome_arquivo):
             escritor.writerow(pessoa)
     print("Arquivo salvo com sucesso!\n")
 
-def ler_arquivo():
+import os
+
+def ler_arquivo(nome_arquivo):
     pessoas = []
-    try:
-        with open(ARQUIVO, "r", newline='') as arquivo:
-            leitor = csv.DictReader(arquivo)
-            for linha in leitor:
-                if linha["idade"] == "idade":  # pula linha de cabeçalho duplicada
-                    continue
-                pessoas.append({
-                    "nome": linha["nome"],
-                    "idade": int(linha["idade"]),
-                    "estado": linha["estado"]
-                })
-    except FileNotFoundError:
-        pass
+    if not os.path.exists(nome_arquivo):
+        return pessoas  # retorna lista vazia se arquivo não existe
+    with open(nome_arquivo, "r", newline='') as arquivo:
+        leitor = csv.DictReader(arquivo)
+        for linha in leitor:
+            if linha["idade"] == "idade":  # ignora cabeçalho duplicado
+                continue
+            pessoas.append({
+                "nome": linha["nome"],
+                "idade": int(linha["idade"]),
+                "estado": linha["estado"]
+            })
     return pessoas
+
 
 
 
