@@ -52,7 +52,6 @@ with st.form("cadastro_form"):
             pessoas.append({"nome": nome.strip(), "idade": idade, "estado": estado})
             salvar_arquivo(pessoas, ARQUIVO)
             st.success(f"{nome} cadastrado(a) com sucesso!")
-            st.experimental_rerun()  # Atualiza a tela com o novo cadastro
 
 # Exibe tabela
 st.header("👥 Pessoas cadastradas")
